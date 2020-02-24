@@ -6,15 +6,35 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
+import java.beans.ConstructorProperties;
 
-//@Repository("1234")
+@Repository("getUserDao")
 public class UserDao implements Dao {
 
 	@Autowired
 	Environment environment;
 
+	private String s;
+
+
+	public UserDao(String s) {
+	}
+
+
+
+	public String getS() {
+		return s;
+	}
+
+	public void setS(String s) {
+		this.s = s;
+	}
+
+	public UserDao(int i) {
+	}
+	public UserDao(boolean b) {
+	}
 	public UserDao(Man man) {
-		System.out.println("user dao constructor");
 	}
 
 	@PostConstruct

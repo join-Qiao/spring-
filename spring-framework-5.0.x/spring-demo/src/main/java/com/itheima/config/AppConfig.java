@@ -12,7 +12,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ComponentScan("com.itheima.config")
+@ComponentScan("com.itheima")
 //@QN
 public class AppConfig {
 
@@ -21,10 +21,10 @@ public class AppConfig {
 		return new Man();
 	}
 
-	@Bean
-	public Dao getUserDao(){
-		return new UserDao(getMan());
-	}
+//	@Bean
+//	public Dao getUserDao(){
+//		return new UserDao(getMan());
+//	}
 
 	@Bean
 	public CompanyDao getCompanyDao(){

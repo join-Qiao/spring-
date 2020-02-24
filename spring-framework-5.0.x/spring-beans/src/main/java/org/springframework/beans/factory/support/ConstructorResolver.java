@@ -177,6 +177,8 @@ class ConstructorResolver {
 			// Take specified constructors, if any.
 			// 如果有 , 则使用传递来的有参构造.
 			Constructor<?>[] candidates = chosenCtors;
+			// 合适会走到这一步呢?
+			// 在这个对象有多个构造函数时 , 所以传过来的chosenCtors是空. 需要通过反射去获取构造函数. 这样就可以拿到全部的构造函数
 			if (candidates == null) {
 				// 如果传递来的构造参数也是空 , 那么就使用反射, 获取到class中的构造函数.
 				Class<?> beanClass = mbd.getBeanClass();
@@ -206,10 +208,11 @@ class ConstructorResolver {
 			//		8. protected QN(int a)
 			AutowireUtils.sortConstructors(candidates);
 			// 定义了一个差异变量 , 此变量很重要.
+			// 为什么重要因为优化了查询速度, spring自己的算法, 用来计算此构造方法是否符合要求 , 越符合的差异值越小.
 			int minTypeDiffWeight = Integer.MAX_VALUE;
-			// 不明确的构造方法集合
+			// 不明确的构造方法集合	符合的构造方法放在里面, 用差异值来决定用哪一个
 			Set<Constructor<?>> ambiguousConstructors = null;
-			// 未满足的依赖项异常集合
+			// 未满足的依赖项异常集合     如果参数转换出现了异常 , 那么构造方法肯定不符合 ,放入此集合中.
 			LinkedList<UnsatisfiedDependencyException> causes = null;
 
 			for (Constructor<?> candidate : candidates) {
@@ -242,12 +245,14 @@ class ConstructorResolver {
 					try {
 						// 判断是否添加了@ConstructorProperties ,如果有会把value的属性值取出来.
 						String[] paramNames = ConstructorPropertiesChecker.evaluate(candidate, paramTypes.length);
+						// 如果没有ConstructorProperties,基本上都不会使用,那么就需要得到构造方法的参数名称的集合,主要是接下来需要赋值
 						if (paramNames == null) {
 							ParameterNameDiscoverer pnd = this.beanFactory.getParameterNameDiscoverer();
 							if (pnd != null) {
 								paramNames = pnd.getParameterNames(candidate);
 							}
 						}
+						// 参数类型转换赋值的方法, 如果转换正常 , 那么能得到参数结果, 如果转换不正正常 , 那么直接报异常, catch中保存到异常集合中.
 						argsHolder = createArgumentArray(beanName, mbd, resolvedValues, bw, paramTypes, paramNames,
 								getUserDeclaredConstructor(candidate), autowiring);
 					}
@@ -274,6 +279,7 @@ class ConstructorResolver {
 				int typeDiffWeight = (mbd.isLenientConstructorResolution() ?
 						argsHolder.getTypeDifferenceWeight(paramTypes) : argsHolder.getAssignabilityWeight(paramTypes));
 				// Choose this constructor if it represents the closest match.
+				// 通过差异值来判断使用什么构造方法. 选取差异值最小的.
 				if (typeDiffWeight < minTypeDiffWeight) {
 					constructorToUse = candidate;
 					argsHolderToUse = argsHolder;
@@ -282,6 +288,7 @@ class ConstructorResolver {
 					ambiguousConstructors = null;
 				}
 				else if (constructorToUse != null && typeDiffWeight == minTypeDiffWeight) {
+					// 差异值如果一样 ,保存到不确定的构造方法集合中
 					if (ambiguousConstructors == null) {
 						ambiguousConstructors = new LinkedHashSet<>();
 						ambiguousConstructors.add(constructorToUse);
@@ -290,6 +297,7 @@ class ConstructorResolver {
 				}
 			}
 
+			// 如果遍历完所以构造方法 ,都得不到使用的构造方法 ,那么直接报异常了.
 			if (constructorToUse == null) {
 				if (causes != null) {
 					UnsatisfiedDependencyException ex = causes.removeLast();
@@ -315,6 +323,7 @@ class ConstructorResolver {
 		}
 
 		try {
+			// 拿到实例化策略, 然后去穿件对象.
 			final InstantiationStrategy strategy = beanFactory.getInstantiationStrategy();
 			Object beanInstance;
 
@@ -326,6 +335,7 @@ class ConstructorResolver {
 						beanFactory.getAccessControlContext());
 			}
 			else {
+				// 最终还是通过构造方法反射创建的.
 				beanInstance = strategy.instantiate(mbd, beanName, this.beanFactory, constructorToUse, argsToUse);
 			}
 
@@ -714,6 +724,7 @@ class ConstructorResolver {
 		TypeConverter customConverter = this.beanFactory.getCustomTypeConverter();
 		TypeConverter converter = (customConverter != null ? customConverter : bw);
 
+		// 得到数组的参数 ,然后去遍历 ,对每一个参数进行赋值.
 		ArgumentsHolder args = new ArgumentsHolder(paramTypes.length);
 		Set<ConstructorArgumentValues.ValueHolder> usedValueHolders = new HashSet<>(paramTypes.length);
 		Set<String> autowiredBeanNames = new LinkedHashSet<>(4);
@@ -745,6 +756,7 @@ class ConstructorResolver {
 				else {
 					MethodParameter methodParam = MethodParameter.forExecutable(executable, paramIndex);
 					try {
+						// 把值转换成参数.
 						convertedValue = converter.convertIfNecessary(originalValue, paramType, methodParam);
 					}
 					catch (TypeMismatchException ex) {

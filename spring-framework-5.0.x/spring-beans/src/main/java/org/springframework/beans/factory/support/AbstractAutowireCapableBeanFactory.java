@@ -1102,6 +1102,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// 如果给一个bean定义了factoryMethiod方法, 那么他就会通过factoryMethod方法来构建对象.
 		// 我们在@conguration对象中, 通过static修饰的方法就是给BeanDefinition添加了一个factoryMethod方法
+		// 在@Configuration配置类中  创建的对象, 都通过factoryMethod来创建 , 相当于给配置类,添加了多个factoryMethod.
 		if (mbd.getFactoryMethodName() != null) {
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
 		}
@@ -1139,14 +1140,22 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// 就会使用你这个有参构造方法来创建对象.
 		// 但是如果有两个构造方法时 , 并且你没有指定primary的构造方法时, 也会返回null , 因为spring不知道你要使用哪个构造方法,所以还是让你走空参构造创建对象.
 		// 简单来说 , 如果有有且只有一个有参构造方法, 那么就返回这个有参构造方法, 如果有多个构造方法 , 就使用空参构造创建.
+		// 但是如果在解析beanDefinotion给他添加了构造方法, 那么就会使用到我们添加的构造方法.
 		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
+		// 如何使用有参构造方法来创建对象呢?
+		// 有四个判断条件.
+		// 1. 通过上方,后置处理器,找到了唯一的有参构造
+		// 2. BeanDefinition设置为自动创建的模式  AUTOWIRE_CONSTRUCTOR
+		// 3. BeanDefinition我们设置了ConstructorArgumentValues, 还记得mybatis吗? 我们扫描完BeanDefinition后,给BeanDefinition设置使用什么构造参数和使用哪个beanClass.
+		// 4. 调用singletonObject是,传入的args就不为空, 是有值的, 明确告诉你, 我需要构造方法创建.
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
 			return autowireConstructor(beanName, mbd, ctors, args);
 		}
 
 		// No special handling: simply use no-arg constructor.
-		// 调用空参构造方法创建bean对象.
+		// 调用空参构造方法创建bean对象.  如果一个对象有多个有参构造方法时, spring也不知道用什么构造方法, 所以就用空参构造去创建.
+		// 但是如果你没有空参构造呢.   所以调用到这一步的时候,如果你没有空参的构造方法, 反射就获取不到. 就会报错.
 		return instantiateBean(beanName, mbd);
 	}
 
