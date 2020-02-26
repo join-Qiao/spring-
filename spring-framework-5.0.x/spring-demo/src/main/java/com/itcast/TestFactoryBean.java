@@ -1,7 +1,9 @@
 package com.itcast;
 
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
+@EnableAspectJAutoProxy
 public class TestFactoryBean implements FactoryBean<CompanyDao1> {
 	@Override
 	public CompanyDao1 getObject() throws Exception {

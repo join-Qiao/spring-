@@ -249,6 +249,8 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
 			}
+			// 再次判断beanClass中是否包含切面的注解 , 如果包含,保存到advisedBeans集合中,代表其实一个切面, 这样在bean实例化之后,
+			// 执行beanPostProcess的postProcessAfterInitialization方法时, 不会对切面进行增强.
 			if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
 				this.advisedBeans.put(cacheKey, Boolean.FALSE);
 				return null;

@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -363,6 +364,11 @@ public class DispatcherServlet extends FrameworkServlet {
 	public DispatcherServlet() {
 		super();
 		setDispatchOptionsRequest(true);
+	}
+
+	@Override
+	public void init(ServletConfig config) throws ServletException {
+		super.init(config);
 	}
 
 	/**

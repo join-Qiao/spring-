@@ -214,6 +214,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				}
 
 				// 把此beanName添加到 singletonsCurrentlyInCreation 集合中去， 表示beanname正在创建了.
+				// 在对象创建完成后, 并且属性填充完毕后, 从集合中删除.
 				beforeSingletonCreation(beanName);
 				boolean newSingleton = false;
 				boolean recordSuppressedExceptions = (this.suppressedExceptions == null);
@@ -221,6 +222,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					this.suppressedExceptions = new LinkedHashSet<>();
 				}
 				try {
+					// 创建对象, 填充属性, 执行后置处理器.
 					singletonObject = singletonFactory.getObject();
 					newSingleton = true;
 				}
@@ -244,6 +246,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					if (recordSuppressedExceptions) {
 						this.suppressedExceptions = null;
 					}
+					// 在创建对象完成后 ,同时属性填充完毕 , 同时后置处理器也执行完毕 ,  把对象从正在创建的集合中删除 ,表示对象创建完成.
 					afterSingletonCreation(beanName);
 				}
 				//把创建出来的对象, 放入spring的ioc容器. singletonObjects集合.
